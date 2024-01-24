@@ -1,7 +1,6 @@
 import {createWriteStream} from 'fs'
 import { fileURLToPath } from 'url';
 import path from 'path';
-import {Writable } from 'stream';
 
 const write = async () => {
     const __filename = fileURLToPath(import.meta.url);
@@ -9,34 +8,31 @@ const write = async () => {
     const fileToWritePath = path.join(__dirname, 'files', 'fileToWrite.txt');
 
     const writeStream = createWriteStream(fileToWritePath);
+    const readableStream = process.stdin;
 
-    writeStream.on('finish', (data) => {
+    writeStream.on('finish', () => {
         console.log('stream finished')
     })
+
     writeStream.on('error', (err) => {
         console.log('stream throwed error' + err)
     })
-    writeStream.on('close', () => {
-        console.log('stream closed')
-    })
-    writeStream.on('pipe', (data) => {
+
+    writeStream.on('pipe', () => {
         console.log('stream piped')
     })
-    writeStream.on('unpipe', (data) => {
+
+    readableStream.on('data', (chunk) => {
+    if(chunk.toString().match('STOP'))
+        readableStream.unpipe(writeStream)
+        console.log(chunk.toString())
+    })
+    
+    writeStream.on('unpipe', () => {
         console.log('stream unpiped')
     })
 
-    const stdinToWriteStream = new Writable({
-        write(chunk, encoding, callback) {
-            writeStream.write(chunk);
-            writeStream.end();
-            process.stdin.unpipe(stdinToWriteStream);
-            callback();
-        }
-    });
-
-    process.stdin.pipe(stdinToWriteStream)
-      
+    readableStream.pipe(writeStream);      
 };
 
 await write();
