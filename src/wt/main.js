@@ -18,8 +18,8 @@ const performCalculations = async () => {
             new Promise((resolve, reject) => {
             const worker = new Worker(workerPath, {workerData: workerStartData + i});
     
-            worker.on('message', resolve);
-            worker.on('error', reject)
+            worker.on('message', (message) => resolve(message) );
+            worker.on('error', (err) =>  reject(err) )
             worker.on('exit', (code) => {
                 if(code !== 0){
                     reject(new Error(`Work stopped with code ${code}`));
@@ -28,20 +28,15 @@ const performCalculations = async () => {
         }))
     }
 
-    return Promise.allSettled(promiseArray)
-
-    // return new Promise((resolve, reject) => {
-    //     const worker = new Worker(workerPath);
-
-    //     worker.on('message', resolve);
-    //     worker.on('error', reject)
-    //     worker.on('exit', (code) => {
-    //         if(code !== 0){
-    //             reject(new Error(`Work stopped with code ${code}`));
-    //         }
-    //     });
-    // });
+    Promise.allSettled(promiseArray).then(results => {
+        return results.map((result) => {
+          return {
+            status: result.status === 'fulfilled' ? 'resolved' : 'error',
+            data: result.status === 'fulfilled' ? result.value : null
+          };
+        });
+      })
+    .then(data => console.log(data));
 };
 
-const result = await performCalculations();
-console.log(result);
+await performCalculations();
