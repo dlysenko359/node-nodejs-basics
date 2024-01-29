@@ -6,8 +6,8 @@ const spawnChildProcess = async (args) => {
     process.stdin.pipe(child.stdin);
     child.stdout.pipe(process.stdout);
     
-    child.on('error', (error) => {
-        console.error(`Ошибка: ${error.message}`);
+    child.on('error', (err) => {
+        console.error(`Error: ${err.message}`);
     });
 };
 
